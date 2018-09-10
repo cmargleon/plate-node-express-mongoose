@@ -7,7 +7,7 @@ const mongoose = require('mongoose');
 
 const usersRoute = require('./routes/user')
 const app = express();
-const URI = 'Your DB URL';
+const URI = 'YOUR DB URL';
 
 mongoose.connect(URI, {
     dbName: "testing"

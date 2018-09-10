@@ -10,8 +10,7 @@ const userSchema = mongoose.Schema({
             },
     password: 
             { type: String,
-              required: true,
-              match: /^(?=.*[0-9])(?=.*[a-z])(?=.*[A-Z])(?=.*[@#$%^&+=])(?=\S+$).{8,}$/
+              required: true
             },
     firstName:
             { type: String,

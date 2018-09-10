@@ -2,6 +2,7 @@ const User = require('../models/user');
 const mongoose = require('mongoose');
 const bcrypt = require('bcrypt');
 const jwt = require('jsonwebtoken');
+const validate = require('../validation/validate');
 
 exports.user_signup = (req, res, next) => {
     User.find({ email: req.body.email })
@@ -14,34 +15,42 @@ exports.user_signup = (req, res, next) => {
                     message: "Este e-mail ya se encuentra registrado"
                 });
             } else {
-                console.log("registrando")
-                bcrypt.hash(req.body.password, 10, (err, hash)=> {
-                    if(err) {
-                        return res.status(500).json({
-                            error: err
-                        });
-                    } else {
-                        const user = new User({
-                            _id: new mongoose.Types.ObjectId(),
-                            email: req.body.email,
-                            password: hash,
-                            firstName: req.body.firstName,
-                            lastName: req.body.lastName
+                console.log("registrando");
+                let isValid = validate.validatePassword(req.body.password);
+                if (isValid) {
+                    bcrypt.hash(req.body.password, 10, (err, hash)=> {
+                        if(err) {
+                            return res.status(500).json({
+                                error: err
                             });
-                            user
-                            .save()
-                            .then(result => {
-                                res.status(201).json({
-                                    message: "Usuario creado"
+                        } else {
+                            const user = new User({
+                                _id: new mongoose.Types.ObjectId(),
+                                email: req.body.email,
+                                password: hash,
+                                firstName: req.body.firstName,
+                                lastName: req.body.lastName
                                 });
-                            })
-                            .catch(err => {
-                                res.status(500).json({
-                                    error: err
+                                user
+                                .save()
+                                .then(result => {
+                                    res.status(201).json({
+                                        message: "Usuario creado"
+                                    });
+                                })
+                                .catch(err => {
+                                    res.status(500).json({
+                                        error: err
+                                    });
                                 });
-                            });
-                    }
-                });
+                        }
+                    });
+                } else {
+                    res.status(500).json({
+                        error: "La contraseña no es válida"
+                    })
+                }
+                
             }
         })
         .catch(err => {
