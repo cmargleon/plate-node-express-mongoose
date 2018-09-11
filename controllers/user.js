@@ -1,4 +1,5 @@
 const User = require('../models/user');
+const Token = require('../models/token');
 const mongoose = require('mongoose');
 const bcrypt = require('bcrypt');
 const jwt = require('jsonwebtoken');
@@ -31,8 +32,8 @@ exports.user_signup = (req, res, next) => {
                     user
                     .save()
                     .then(result => {
+                        //send confirmation email. It may fail but the user can ask for a new confirmation email
                         emailConfirmation.emailConfirmation(result._id, result.email);
-                        //ENVIAR EMAIL DE CONFIRMACIÓN!
                         return res.status(201).json({
                             message: "Usuario creado y correo de confirmación enviado"
                         });
@@ -79,7 +80,12 @@ exports.user_login = (req, res, next) => {
             });
         });
     })
-    .catch()
+    .catch(err => {
+        return res.status(500).json({
+            message: 'Algo ha fallado',
+            error: err
+        })
+    });
 }
 
 exports.user_delete = (req, res, next) => {
@@ -95,8 +101,25 @@ exports.user_delete = (req, res, next) => {
             error: err
         });
     });
+}
 
 exports.emailConfirmation = (req, res, next) => {
-    
+    Token.findOne({ token: req.params.token }, function (err, token) {
+        if (!token) return res.status(400).json({ type: 'not-verified', msg: 'El token no es válido. Puede haber expirado' });
+ 
+        // If we found a token, find a matching user
+        User.findOne({ _id: token._userId }, function (err, user) {
+            if (!user) return res.status(400).json({ msg: 'No se ha encontrado un token para este usuario' });
+            if (user.isVerified) return res.status(400).json({ type: 'already-verified', msg: 'Este usuario ya se encuentra verificado' });
+ 
+            // Verify and save the user
+            user.isVerified = true;
+            user.save(function (err) {
+                if (err) { return res.status(500).json({ msg: err.message }); }
+                return res.status(200).json({
+                    message: "Usuario verificado"
+                });
+            });
+        });
+    });
     }
-}

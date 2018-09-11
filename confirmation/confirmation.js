@@ -4,12 +4,12 @@ const crypto = require('crypto');
 
 //transporter
 let transporter = nodeMailer.createTransport({
-    host: 'smtp.zoho.com',
+    host: '',
     port: 465,
     secure: true,
     auth: {
-        user: 'claudiomatiasrg@zoho.com',
-        pass: 'Lestat1988!'
+        user: '',
+        pass: ''
     }
 });
 
