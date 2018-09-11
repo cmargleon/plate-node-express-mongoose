@@ -23,7 +23,11 @@ const userSchema = mongoose.Schema({
               required: true,
               minlength: 2,
               maxlength: 50
-            }
+            },
+    isVerified: 
+            { type: Boolean,
+              default: false
+            },
 });
 
 module.exports = mongoose.model('User', userSchema);

@@ -3,61 +3,48 @@ const mongoose = require('mongoose');
 const bcrypt = require('bcrypt');
 const jwt = require('jsonwebtoken');
 const validate = require('../validation/validate');
+const emailConfirmation = require('../confirmation/confirmation');
 
 exports.user_signup = (req, res, next) => {
-    User.find({ email: req.body.email })
-        .exec()
-        .then(user => {
-            console.log(user.length)
-            if(user.length >= 1) {
-                console.log("registrado")
-                return res.status(422).json({
-                    message: "Este e-mail ya se encuentra registrado"
+    let valid = validate.validatePassword(req.body.password);
+    if (!valid) { return res.status(400).json({ error: "Contraseña no válida"}) };
+
+    User.findOne({ email: req.body.email }, function (err, user) {
+ 
+        // Make sure user doesn't already exist
+        if (user) return res.status(400).send({ msg: 'The email address you have entered is already associated with another account.' });
+     
+        // Create and save the user
+        bcrypt.hash(req.body.password, 10, (err, hash)=> {
+            if(err) {
+                return res.status(500).json({
+                    error: err
                 });
             } else {
-                console.log("registrando");
-                let isValid = validate.validatePassword(req.body.password);
-                if (isValid) {
-                    bcrypt.hash(req.body.password, 10, (err, hash)=> {
-                        if(err) {
-                            return res.status(500).json({
-                                error: err
-                            });
-                        } else {
-                            const user = new User({
-                                _id: new mongoose.Types.ObjectId(),
-                                email: req.body.email,
-                                password: hash,
-                                firstName: req.body.firstName,
-                                lastName: req.body.lastName
-                                });
-                                user
-                                .save()
-                                .then(result => {
-                                    res.status(201).json({
-                                        message: "Usuario creado"
-                                    });
-                                })
-                                .catch(err => {
-                                    res.status(500).json({
-                                        error: err
-                                    });
-                                });
-                        }
+                const user = new User({
+                    _id: new mongoose.Types.ObjectId(),
+                    email: req.body.email,
+                    password: hash,
+                    firstName: req.body.firstName,
+                    lastName: req.body.lastName
                     });
-                } else {
-                    res.status(500).json({
-                        error: "La contraseña no es válida"
+                    user
+                    .save()
+                    .then(result => {
+                        emailConfirmation.emailConfirmation(result._id, result.email);
+                        //ENVIAR EMAIL DE CONFIRMACIÓN!
+                        return res.status(201).json({
+                            message: "Usuario creado y correo de confirmación enviado"
+                        });
                     })
-                }
-                
+                    .catch(err => {
+                        return res.status(500).json({
+                            error: err
+                        });
+                    });
             }
-        })
-        .catch(err => {
-            return res.status(200).json({
-                error: err
-            })
-        })
+        });
+    });
 }
 
 exports.user_login = (req, res, next) => {
@@ -95,7 +82,7 @@ exports.user_login = (req, res, next) => {
     .catch()
 }
 
-exports.user_delete = (req, res, body) => {
+exports.user_delete = (req, res, next) => {
     User.remove({ _id : req.params.userId})
     .exec()
     .then(result=> {
@@ -108,4 +95,8 @@ exports.user_delete = (req, res, body) => {
             error: err
         });
     });
+
+exports.emailConfirmation = (req, res, next) => {
+    
+    }
 }

@@ -15,7 +15,7 @@ passwordSchema
 module.exports = {
 
     validatePassword: (password) => {
-        return passwordSchema.validate(password)
+        return passwordSchema.validate(password);
     }
 
 }
